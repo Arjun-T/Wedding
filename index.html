@@ -259,18 +259,194 @@ body{ background:var(--cream);color:var(--deep);font-family:'Cormorant Garamond'
 .ti-journey .ti-desc{color:var(--rose);}
 
 /* ══ SCRATCH CARD ══ */
-#scratch-section{background:linear-gradient(135deg,#fdf6e8,#f5e8d0,#fdf0e0);padding:6rem 2rem;text-align:center;position:relative;overflow:hidden;}
-#scratch-section::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse,rgba(201,169,110,0.14) 0%,transparent 70%);pointer-events:none;}
-.scratch-inner{max-width:800px;margin:0 auto;position:relative;z-index:1;}
-.scratch-card{position:relative;width:380px;height:210px;margin:2.5rem auto 0;border-radius:18px;overflow:hidden;cursor:crosshair;animation:card-glow 4s ease-in-out infinite;}
-@keyframes card-glow{0%,100%{box-shadow:0 12px 50px rgba(107,39,55,0.22),0 0 0 1px rgba(201,169,110,0.25);}50%{box-shadow:0 12px 65px rgba(107,39,55,0.38),0 0 0 1px rgba(201,169,110,0.55),0 0 40px rgba(201,169,110,0.18);}}
-.scratch-back{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--maroon-dark),var(--maroon),#4a1020);}
-.sc-date{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:3.2rem;color:var(--gold-light);letter-spacing:0.05em;text-shadow:0 0 30px rgba(201,169,110,0.8);animation:glow-pulse 2s ease-in-out infinite;}
-@keyframes glow-pulse{0%,100%{opacity:0.85;}50%{opacity:1;text-shadow:0 0 50px rgba(201,169,110,1);}}
-.sc-sub{font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.4em;color:rgba(232,213,163,0.5);text-transform:uppercase;margin-top:0.6rem;}
-#scratch-canvas{position:absolute;inset:0;border-radius:18px;touch-action:none;cursor:crosshair;}
-.scratch-hint{font-family:'Crimson Pro',serif;font-style:italic;color:var(--rose);font-size:1rem;margin-top:1.2rem;animation:hint-pulse 2s ease-in-out infinite;}
-@keyframes hint-pulse{0%,100%{opacity:0.55;}50%{opacity:1;}}
+#scratch-section {
+  background: linear-gradient(160deg, var(--maroon-dark) 0%, #3a0a14 40%, #1a0508 100%);
+  padding: 7rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+/* Ambient radial glow behind card */
+#scratch-section::before {
+  content:'';
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:700px; height:500px;
+  background: radial-gradient(ellipse, rgba(201,169,110,0.13) 0%, rgba(107,39,55,0.1) 40%, transparent 70%);
+  pointer-events:none;
+  animation: ambient-breathe 5s ease-in-out infinite;
+}
+@keyframes ambient-breathe {
+  0%,100%{ transform:translate(-50%,-50%) scale(1);   opacity:0.7; }
+  50%    { transform:translate(-50%,-50%) scale(1.15); opacity:1;   }
+}
+/* Floating petals / rose dust */
+#scratch-section::after {
+  content:'';
+  position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(193,123,123,0.07) 0%, transparent 35%),
+    radial-gradient(circle at 80% 70%, rgba(201,169,110,0.07) 0%, transparent 35%);
+  pointer-events:none;
+}
+
+.scratch-inner { max-width:800px; margin:0 auto; position:relative; z-index:1; }
+/* Override shared sec-tag/title/rule color for dark bg */
+#scratch-section .sec-tag   { color: rgba(232,213,163,0.6); }
+#scratch-section .sec-title { color: var(--gold-light); text-shadow: 0 0 30px rgba(201,169,110,0.4); font-size: clamp(2rem,4vw,3rem); }
+#scratch-section .sec-rule  { background:linear-gradient(90deg,transparent,var(--gold-light),transparent); box-shadow:0 0 10px rgba(201,169,110,0.5); }
+#scratch-section .reveal-text { font-family:'Crimson Pro',serif; font-style:italic; color:rgba(232,213,163,0.45); font-size:1rem; }
+
+/* Card outer wrapper — no hard border, bleeds into dark bg */
+.scratch-card-outer {
+  position: relative;
+  width: 400px;
+  margin: 3rem auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Soft halo that pulses — replaces box border */
+.scratch-halo {
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(201,169,110,0.18) 0%, transparent 70%);
+  animation: halo-pulse 3.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes halo-pulse {
+  0%,100%{ transform:scale(1);   opacity:0.6; }
+  50%    { transform:scale(1.12); opacity:1;  }
+}
+
+/* Floating petals orbiting the card */
+.petal {
+  position:absolute;
+  font-size:1rem;
+  opacity:0;
+  pointer-events:none;
+  animation: petal-orbit linear infinite;
+  z-index: 0;
+}
+@keyframes petal-orbit {
+  0%   { opacity:0;   transform: rotate(0deg)   translateX(170px) scale(0.6); }
+  10%  { opacity:0.7; }
+  90%  { opacity:0.4; }
+  100% { opacity:0;   transform: rotate(360deg) translateX(170px) scale(0.9); }
+}
+
+.scratch-card {
+  position:relative;
+  width:400px; height:220px;
+  border-radius:20px;
+  overflow:hidden;
+  cursor:crosshair;
+  z-index: 1;
+  /* No solid border — just a very soft inset shadow for depth */
+  box-shadow:
+    0 20px 80px rgba(0,0,0,0.5),
+    0  4px 20px rgba(0,0,0,0.4),
+    inset 0 0 0 1px rgba(201,169,110,0.15);
+}
+
+/* Revealed content behind the scratch layer */
+.scratch-back {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, #1a0508 0%, var(--maroon-dark) 40%, #2a0a10 100%);
+  overflow:hidden;
+}
+/* Animated star field inside the card */
+.scratch-back::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image:
+    radial-gradient(circle, rgba(201,169,110,0.9) 1px, transparent 1px),
+    radial-gradient(circle, rgba(201,169,110,0.6) 1px, transparent 1px),
+    radial-gradient(circle, rgba(201,169,110,0.4) 1px, transparent 1px);
+  background-size: 60px 60px, 40px 40px, 80px 80px;
+  background-position: 10px 10px, 30px 25px, 5px 45px;
+  animation: stars-drift 8s linear infinite;
+  opacity: 0.5;
+}
+@keyframes stars-drift {
+  from { background-position: 10px 10px,  30px 25px, 5px 45px; }
+  to   { background-position: 70px 70px,  70px 65px, 85px 125px; }
+}
+/* Soft radial glow behind the date */
+.scratch-back::after {
+  content:'';
+  position:absolute;
+  top:50%; left:50%; transform:translate(-50%,-50%);
+  width:280px; height:140px;
+  border-radius:50%;
+  background: radial-gradient(ellipse, rgba(201,169,110,0.22) 0%, transparent 70%);
+  animation: inner-glow 2.5s ease-in-out infinite;
+}
+@keyframes inner-glow {
+  0%,100%{ opacity:0.6; transform:translate(-50%,-50%) scale(1);   }
+  50%    { opacity:1;   transform:translate(-50%,-50%) scale(1.15); }
+}
+
+.sc-date {
+  font-family:'Cormorant Garamond',serif; font-weight:300;
+  font-size: 3.4rem; color:var(--gold-light); letter-spacing:0.08em;
+  position:relative; z-index:1;
+  animation: date-reveal 3s ease-in-out infinite;
+}
+@keyframes date-reveal {
+  0%,100%{ text-shadow:0 0 20px rgba(201,169,110,0.6), 0 0 40px rgba(201,169,110,0.2); }
+  50%    { text-shadow:0 0 40px rgba(201,169,110,1),   0 0 80px rgba(201,169,110,0.5), 0 0 120px rgba(201,169,110,0.2); }
+}
+.sc-sub {
+  font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:0.45em;
+  color:rgba(232,213,163,0.45); text-transform:uppercase; margin-top:0.7rem;
+  position:relative; z-index:1;
+}
+.sc-hearts {
+  position:relative; z-index:1; margin-top:0.6rem;
+  font-size:0.9rem; opacity:0.4; letter-spacing:0.5em;
+  animation: hearts-fade 3s ease-in-out 1s infinite;
+}
+@keyframes hearts-fade { 0%,100%{opacity:0.3;} 50%{opacity:0.7;} }
+
+#scratch-canvas {
+  position:absolute; inset:0;
+  border-radius:20px;
+  touch-action:none; cursor:crosshair;
+  z-index: 10;
+}
+
+/* Hint below — sparkle animation */
+.scratch-hint {
+  font-family:'Crimson Pro',serif; font-style:italic;
+  color: rgba(232,213,163,0.5);
+  font-size:0.95rem; margin-top:1.8rem;
+  letter-spacing:0.1em;
+  animation: hint-sparkle 2.5s ease-in-out infinite;
+}
+@keyframes hint-sparkle {
+  0%,100%{ opacity:0.35; letter-spacing:0.08em; }
+  50%    { opacity:0.8;  letter-spacing:0.14em; }
+}
+
+/* Sparkle particles that drift up from card */
+.sparkle {
+  position:absolute;
+  width:4px; height:4px; border-radius:50%;
+  background: var(--gold-light);
+  pointer-events:none;
+  animation: sparkle-rise linear infinite;
+  box-shadow: 0 0 6px rgba(201,169,110,0.8);
+}
+@keyframes sparkle-rise {
+  0%  { opacity:0; transform:translateY(0)   scale(0); }
+  20% { opacity:1; transform:translateY(-20px) scale(1); }
+  100%{ opacity:0; transform:translateY(-80px) scale(0.3); }
+}
 
 /* ══ FOOTER ══ */
 footer{background:var(--deep);text-align:center;padding:3rem 2rem;color:rgba(232,213,163,0.4);font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:0.45em;text-transform:uppercase;}
@@ -395,7 +571,7 @@ footer{background:var(--deep);text-align:center;padding:3rem 2rem;color:rgba(232
   </div>
   <div class="timeline">
     <div class="ti reveal">
-      <div class="ti-l"><span class="ti-time">09:00 AM</span><div class="ti-name">Welcome & Gathering</div><div class="ti-desc">Family & friends arrive, traditional welcome</div></div>
+      <div class="ti-l"><span class="ti-time">10:30 AM</span><div class="ti-name">Welcome & Gathering</div><div class="ti-desc">Family & friends arrive, traditional welcome</div></div>
       <div class="ti-dot"></div><div></div>
     </div>
     <div class="ti reveal d1">
@@ -423,15 +599,32 @@ footer{background:var(--deep);text-align:center;padding:3rem 2rem;color:rgba(232
     <span class="sec-tag reveal">A little surprise</span>
     <h2 class="sec-title reveal d1">Scratch to Reveal the Date</h2>
     <div class="sec-rule reveal d2"></div>
-    <p style="font-family:'Crimson Pro',serif;font-style:italic;color:#bbb;font-size:1rem;" class="reveal d3">We've hidden something special just for you...</p>
-    <div class="scratch-card reveal d4">
-      <div class="scratch-back">
-        <div class="sc-date">25 · 12 · 2026</div>
-        <div class="sc-sub">Friday — Kanhangad, Kerala</div>
+    <p class="reveal-text reveal d3">We've hidden something special just for you...</p>
+
+    <div class="scratch-card-outer reveal d4">
+      <!-- Ambient halo glow -->
+      <div class="scratch-halo"></div>
+
+      <!-- Floating petals -->
+      <div class="petal" style="animation-duration:9s;  animation-delay:0s;">✦</div>
+      <div class="petal" style="animation-duration:12s; animation-delay:2s;">❧</div>
+      <div class="petal" style="animation-duration:10s; animation-delay:4s;">✦</div>
+      <div class="petal" style="animation-duration:14s; animation-delay:1s;">·</div>
+      <div class="petal" style="animation-duration:11s; animation-delay:6s;">❧</div>
+      <div class="petal" style="animation-duration:13s; animation-delay:3s;">✦</div>
+
+      <!-- The card itself -->
+      <div class="scratch-card" id="scratch-card-el">
+        <div class="scratch-back">
+          <div class="sc-date">25 · 12 · 2026</div>
+          <div class="sc-sub">Friday — Kanhangad, Kerala</div>
+          <div class="sc-hearts">♡ &nbsp; ♡ &nbsp; ♡</div>
+        </div>
+        <canvas id="scratch-canvas"></canvas>
       </div>
-      <canvas id="scratch-canvas"></canvas>
+
+      <p class="scratch-hint">✦ &nbsp; scratch to unveil &nbsp; ✦</p>
     </div>
-    <p class="scratch-hint reveal d3">✦ use your finger or mouse to scratch ✦</p>
   </div>
 </div>
 
@@ -455,6 +648,133 @@ footer{background:var(--deep);text-align:center;padding:3rem 2rem;color:rgba(232
 /* ── CURTAIN — opens on first scroll ── */
 let curtainOpened = false;
 
+function showerPetals() {
+  // Beautiful SVG petal shapes — hand-crafted organic forms
+  const svgPetals = [
+    // Soft 5-petal flower
+    `<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(20,20)">
+        <ellipse rx="4" ry="10" fill="COLOR" opacity="0.85" transform="rotate(0)   translate(0,-6)"/>
+        <ellipse rx="4" ry="10" fill="COLOR" opacity="0.85" transform="rotate(72)  translate(0,-6)"/>
+        <ellipse rx="4" ry="10" fill="COLOR" opacity="0.85" transform="rotate(144) translate(0,-6)"/>
+        <ellipse rx="4" ry="10" fill="COLOR" opacity="0.85" transform="rotate(216) translate(0,-6)"/>
+        <ellipse rx="4" ry="10" fill="COLOR" opacity="0.85" transform="rotate(288) translate(0,-6)"/>
+        <circle r="3" fill="CENTERCOL" opacity="0.9"/>
+      </g>
+    </svg>`,
+    // Rose-like layered petals
+    `<svg viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(22,22)">
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(0)   translate(0,-7)"/>
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(60)  translate(0,-7)"/>
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(120) translate(0,-7)"/>
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(180) translate(0,-7)"/>
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(240) translate(0,-7)"/>
+        <ellipse rx="5" ry="13" fill="COLOR" opacity="0.7"  transform="rotate(300) translate(0,-7)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(30)  translate(0,-5)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(90)  translate(0,-5)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(150) translate(0,-5)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(210) translate(0,-5)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(270) translate(0,-5)"/>
+        <ellipse rx="3.5" ry="9" fill="COLORDARK" opacity="0.9" transform="rotate(330) translate(0,-5)"/>
+        <circle r="4" fill="CENTERCOL" opacity="1"/>
+      </g>
+    </svg>`,
+    // Single teardrop petal — falling alone
+    `<svg viewBox="0 0 24 36" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2 C18 10 20 18 12 34 C4 18 6 10 12 2Z" fill="COLOR" opacity="0.82"/>
+      <path d="M12 6 C14 12 15 20 12 30" stroke="COLORDARK" stroke-width="0.8" fill="none" opacity="0.5"/>
+    </svg>`,
+    // Jasmine-like 4-petal
+    `<svg viewBox="0 0 38 38" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(19,19)">
+        <ellipse rx="4.5" ry="11" fill="COLOR" opacity="0.88" transform="rotate(0)   translate(0,-7)"/>
+        <ellipse rx="4.5" ry="11" fill="COLOR" opacity="0.88" transform="rotate(90)  translate(0,-7)"/>
+        <ellipse rx="4.5" ry="11" fill="COLOR" opacity="0.88" transform="rotate(180) translate(0,-7)"/>
+        <ellipse rx="4.5" ry="11" fill="COLOR" opacity="0.88" transform="rotate(270) translate(0,-7)"/>
+        <circle r="3.5" fill="CENTERCOL" opacity="0.95"/>
+        <circle r="1.5" fill="white" opacity="0.7"/>
+      </g>
+    </svg>`,
+    // Organic curved petal (single)
+    `<svg viewBox="0 0 22 32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11 1 C20 8 22 22 11 31 C0 22 2 8 11 1Z" fill="COLOR" opacity="0.78"/>
+      <path d="M11 4 C15 11 16 22 11 28" stroke="white" stroke-width="0.6" fill="none" opacity="0.4"/>
+    </svg>`,
+    // Marigold-style many petals
+    `<svg viewBox="0 0 46 46" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(23,23)">
+        ${Array.from({length:12},(_,i)=>`<ellipse rx="3" ry="10" fill="COLOR" opacity="0.75" transform="rotate(${i*30}) translate(0,-7)"/>`).join('')}
+        ${Array.from({length:8},(_,i)=>`<ellipse rx="2.5" ry="7" fill="COLORDARK" opacity="0.85" transform="rotate(${i*45+22}) translate(0,-5)"/>`).join('')}
+        <circle r="3.5" fill="CENTERCOL"/>
+      </g>
+    </svg>`,
+  ];
+
+  // Colour palettes — pairs of [petal, dark-petal, centre]
+  const palettes = [
+    ['#f2c4ce','#e89aaa','#f7d6a0'],  // blush pink / gold centre
+    ['#f9d6d6','#e8a0b0','#fff4b0'],  // soft rose / yellow
+    ['#e8d5f0','#c9a0d8','#f9e4c0'],  // lavender / peach
+    ['#fde8c8','#f5c890','#c17b7b'],  // peach / rose centre
+    ['#f5e6d0','#e8c9a0','#c9a96e'],  // ivory / gold
+    ['#ffc8d8','#f09090','#ffd080'],  // hot pink / gold
+    ['#e0f0d8','#b8d8a8','#f9e090'],  // soft green (marigold leaf) / yellow
+    ['#f8d0e8','#e890c0','#fff0a0'],  // magenta / yellow
+  ];
+
+  const total = 55;
+  for(let i = 0; i < total; i++){
+    setTimeout(()=>{
+      const template = svgPetals[Math.floor(Math.random() * svgPetals.length)];
+      const pal      = palettes[Math.floor(Math.random() * palettes.length)];
+      const [petalCol, darkCol, centreCol] = pal;
+
+      let svgStr = template
+        .replaceAll('COLOR',     petalCol)
+        .replaceAll('COLORDARK', darkCol)
+        .replaceAll('CENTERCOL', centreCol);
+
+      const size   = 18 + Math.random() * 28;   // 18–46px
+      const startX = Math.random() * window.innerWidth;
+      const drift  = (Math.random() - 0.5) * 260;
+      const dur    = 3000 + Math.random() * 2500;
+      const rotStart = Math.random() * 360;
+      const rotEnd   = rotStart + (Math.random() - 0.5) * 400;
+      const swayX    = (Math.random() - 0.5) * 80;
+
+      const el = document.createElement('div');
+      el.style.cssText = `
+        position: fixed;
+        left: ${startX}px;
+        top: -${size + 10}px;
+        width: ${size}px;
+        height: ${size}px;
+        pointer-events: none;
+        z-index: 99998;
+        filter: drop-shadow(0 2px 4px rgba(180,100,100,0.18));
+        transform: rotate(${rotStart}deg);
+        opacity: 0.92;
+        transition:
+          transform ${dur}ms cubic-bezier(0.33, 0.1, 0.67, 0.9),
+          top       ${dur}ms cubic-bezier(0.33, 0.1, 0.67, 0.9),
+          opacity   ${dur * 0.25}ms ease-in ${dur * 0.75}ms;
+        will-change: transform, top, opacity;
+      `;
+      el.innerHTML = svgStr;
+      document.body.appendChild(el);
+
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        el.style.top       = `${window.innerHeight + size + 20}px`;
+        el.style.transform = `rotate(${rotEnd}deg) translateX(${drift}px)`;
+        el.style.opacity   = '0';
+      }));
+
+      setTimeout(()=>el.remove(), dur + 300);
+    }, i * 70 + Math.random() * 60);
+  }
+}
+
 function openCurtain() {
   if (curtainOpened) return;
   curtainOpened = true;
@@ -471,6 +791,8 @@ function openCurtain() {
   setTimeout(()=>{
     document.getElementById('drape-l').classList.add('open');
     document.getElementById('drape-r').classList.add('open');
+    // Flower shower as curtain opens
+    showerPetals();
   }, 400);
 
   // Remove from DOM after transition completes
@@ -514,56 +836,248 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 (()=>{
   const canvas = document.getElementById('scratch-canvas');
   const ctx    = canvas.getContext('2d');
-  const wrap   = canvas.parentElement;
+  const card   = document.getElementById('scratch-card-el');
+
+  let initialized = false;
+  let on = false, completed = false;
+  let lastX = null, lastY = null;
 
   function init(){
-    canvas.width  = wrap.offsetWidth;
-    canvas.height = wrap.offsetHeight;
+    // Use the card's actual rendered size
+    const w = card.offsetWidth  || 400;
+    const h = card.offsetHeight || 220;
+    canvas.width  = w;
+    canvas.height = h;
+    // Also set CSS size explicitly so it covers the card fully
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+
     ctx.globalCompositeOperation = 'source-over';
 
-    const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-    g.addColorStop(0,'#d4a853');g.addColorStop(0.2,'#eacc72');
-    g.addColorStop(0.5,'#c09038');g.addColorStop(0.8,'#dfc070');g.addColorStop(1,'#c9a96e');
-    ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Dark-edged gold foil that bleeds into the dark background at edges
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0,    '#1a0508');
+    g.addColorStop(0.05, '#7a4a10');
+    g.addColorStop(0.15, '#c9a040');
+    g.addColorStop(0.35, '#e8cc70');
+    g.addColorStop(0.5,  '#c09038');
+    g.addColorStop(0.65, '#dab858');
+    g.addColorStop(0.88, '#c9a96e');
+    g.addColorStop(1,    '#1a0508');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
 
-    // Shimmer lines
-    ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1;
-    for(let i=0;i<canvas.width;i+=14){ ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,canvas.height);ctx.stroke(); }
+    // Fine vertical shimmer lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.09)'; ctx.lineWidth = 0.8;
+    for(let i = 0; i < w; i += 10){
+      ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke();
+    }
+    // Horizontal subtle bands
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
+    for(let j = 0; j < h; j += 8){
+      ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(w,j); ctx.stroke();
+    }
+    // Diamond pattern overlay
+    ctx.fillStyle = 'rgba(201,169,110,0.06)';
+    const sz = 14;
+    for(let x = 0; x < w; x += sz)
+      for(let y = 0; y < h; y += sz){
+        ctx.beginPath();
+        ctx.moveTo(x+sz/2,y); ctx.lineTo(x+sz,y+sz/2);
+        ctx.lineTo(x+sz/2,y+sz); ctx.lineTo(x,y+sz/2);
+        ctx.closePath(); ctx.fill();
+      }
+    // Fingerprint swirl hint
+    ctx.save();
+    ctx.translate(w/2, h/2 - 14);
+    for(let r = 8; r <= 28; r += 7){
+      ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+      ctx.strokeStyle = `rgba(90,20,30,${0.2 - r*0.004})`;
+      ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+    // Text
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(80,15,25,0.82)';
+    ctx.font = 'bold 13px Cinzel, serif';
+    ctx.fillText('✦  SCRATCH HERE  ✦', w/2, h/2 + 22);
+    ctx.font = '11px Cormorant Garamond, serif';
+    ctx.fillStyle = 'rgba(80,15,25,0.5)';
+    ctx.fillText('to unveil our wedding date', w/2, h/2 + 40);
 
-    // Texture dots
-    ctx.fillStyle='rgba(0,0,0,0.07)';
-    for(let x=0;x<canvas.width;x+=8)
-      for(let y=0;y<canvas.height;y+=8)
-        if((x+y)%16===0) ctx.fillRect(x,y,3,3);
-
-    ctx.textAlign='center';
-    ctx.fillStyle='rgba(90,20,30,0.75)';
-    ctx.font='bold 15px Cinzel,serif';
-    ctx.fillText('✦  SCRATCH HERE  ✦', canvas.width/2, canvas.height/2-10);
-    ctx.font='13px Cormorant Garamond,serif';
-    ctx.fillStyle='rgba(90,20,30,0.5)';
-    ctx.fillText('to reveal our wedding date', canvas.width/2, canvas.height/2+16);
-
+    // Switch to erase mode
     ctx.globalCompositeOperation = 'destination-out';
+    initialized = true;
+    completed = false;
   }
 
-  init();
-  window.addEventListener('resize', init);
+  // Soft feathered brush
+  function scrape(x, y){
+    const r = 38;
+    const grad = ctx.createRadialGradient(x,y,0,x,y,r);
+    grad.addColorStop(0,   'rgba(0,0,0,1)');
+    grad.addColorStop(0.55,'rgba(0,0,0,0.95)');
+    grad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
 
-  let on=false;
-  const scrape=(x,y)=>{ ctx.beginPath();ctx.arc(x,y,34,0,Math.PI*2);ctx.fill(); };
-  canvas.addEventListener('mousedown', e=>{ on=true; scrape(e.offsetX,e.offsetY); });
-  canvas.addEventListener('mousemove', e=>{ if(on) scrape(e.offsetX,e.offsetY); });
-  window.addEventListener('mouseup', ()=>on=false);
-  canvas.addEventListener('touchstart',e=>{
-    on=true; const r=canvas.getBoundingClientRect();
-    scrape(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top); e.preventDefault();
+    // Interpolate between last point and current for smooth stroke
+    if(lastX !== null){
+      const dist = Math.hypot(x-lastX, y-lastY);
+      const steps = Math.ceil(dist / 5);
+      for(let i = 1; i < steps; i++){
+        const ix = lastX + (x-lastX)*i/steps;
+        const iy = lastY + (y-lastY)*i/steps;
+        const ig = ctx.createRadialGradient(ix,iy,0,ix,iy,r);
+        ig.addColorStop(0,'rgba(0,0,0,1)'); ig.addColorStop(0.55,'rgba(0,0,0,0.9)'); ig.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(ix,iy,r,0,Math.PI*2); ctx.fill();
+      }
+    }
+    lastX=x; lastY=y;
+    spawnSparkle(x,y);
+    if(!completed) checkReveal();
+  }
+
+  function spawnSparkle(cx,cy){
+    if(Math.random()>0.35) return;
+    const s=document.createElement('div'); s.className='sparkle';
+    const rect=card.getBoundingClientRect();
+    s.style.cssText=`left:${rect.left+cx-2}px;top:${rect.top+cy-2}px;position:fixed;animation-duration:${0.8+Math.random()*0.7}s;animation-delay:0s;width:${2+Math.random()*3}px;height:${2+Math.random()*3}px;`;
+    document.body.appendChild(s); setTimeout(()=>s.remove(),1600);
+  }
+
+  function checkReveal(){
+    const d=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+    let t=0;
+    for(let i=3;i<d.length;i+=4) if(d[i]<128) t++;
+    if(t/(d.length/4)>0.65) completeReveal();
+  }
+
+  function launchCrackers(originX, originY) {
+    // Cracker colours — gold, rose, cream, maroon
+    const palette = ['#e8d5a3','#c9a96e','#c17b7b','#f5ede0','#fff4d6','#d4a853','#e8a0a0','#ffe4b5'];
+    const shapes  = ['●','★','✦','◆','▲','♥'];
+    const count   = 80;
+    for(let i = 0; i < count; i++){
+      setTimeout(()=>{
+        const p  = document.createElement('div');
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 60 + Math.random() * 220;
+        const vx    = Math.cos(angle) * speed;
+        const vy    = Math.sin(angle) * speed - 180; // bias upward
+        const color = palette[Math.floor(Math.random()*palette.length)];
+        const shape = shapes[Math.floor(Math.random()*shapes.length)];
+        const size  = 8 + Math.random() * 14;
+        const dur   = 900 + Math.random() * 900;
+        const rot   = (Math.random()-0.5) * 720;
+
+        p.textContent = shape;
+        p.style.cssText = `
+          position:fixed;
+          left:${originX}px; top:${originY}px;
+          font-size:${size}px;
+          color:${color};
+          pointer-events:none;
+          z-index:99999;
+          text-shadow:0 0 6px ${color};
+          transition: transform ${dur}ms cubic-bezier(0.25,0.46,0.45,0.94),
+                      opacity   ${dur}ms ease-in;
+          will-change:transform,opacity;
+        `;
+        document.body.appendChild(p);
+        // Trigger animation next frame
+        requestAnimationFrame(()=>{
+          requestAnimationFrame(()=>{
+            p.style.transform = `translate(${vx}px, ${vy + 200}px) rotate(${rot}deg) scale(0.2)`;
+            p.style.opacity   = '0';
+          });
+        });
+        setTimeout(()=>p.remove(), dur + 100);
+      }, i * 18);
+    }
+    // Second wave from slightly offset positions — makes it look like two crackers popping
+    setTimeout(()=>{
+      for(let i = 0; i < 40; i++){
+        setTimeout(()=>{
+          const p2    = document.createElement('div');
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 40 + Math.random() * 160;
+          const vx2   = Math.cos(angle)*speed + (Math.random()-0.5)*60;
+          const vy2   = Math.sin(angle)*speed - 140;
+          const color = palette[Math.floor(Math.random()*palette.length)];
+          const shape = shapes[Math.floor(Math.random()*shapes.length)];
+          const size  = 6 + Math.random() * 10;
+          const dur   = 700 + Math.random() * 700;
+          const rot   = (Math.random()-0.5)*540;
+          p2.textContent = shape;
+          p2.style.cssText = `
+            position:fixed;
+            left:${originX + (Math.random()-0.5)*120}px;
+            top:${originY  + (Math.random()-0.5)*60}px;
+            font-size:${size}px; color:${color};
+            pointer-events:none; z-index:99999;
+            text-shadow:0 0 5px ${color};
+            transition:transform ${dur}ms cubic-bezier(0.25,0.46,0.45,0.94),opacity ${dur}ms ease-in;
+          `;
+          document.body.appendChild(p2);
+          requestAnimationFrame(()=>requestAnimationFrame(()=>{
+            p2.style.transform=`translate(${vx2}px,${vy2+160}px) rotate(${rot}deg) scale(0.1)`;
+            p2.style.opacity='0';
+          }));
+          setTimeout(()=>p2.remove(), dur+100);
+        }, i*22);
+      }
+    }, 350);
+  }
+
+  function completeReveal(){
+    completed=true;
+    canvas.style.transition='opacity 1.2s ease'; canvas.style.opacity='0';
+
+    // Pulse card
+    card.style.transition='transform 0.4s ease';
+    card.style.transform ='scale(1.05)';
+    setTimeout(()=>card.style.transform='scale(1)', 450);
+
+    // Launch crackers from centre of card after short delay
+    setTimeout(()=>{
+      const rect = card.getBoundingClientRect();
+      const cx   = rect.left + rect.width  / 2;
+      const cy   = rect.top  + rect.height / 2;
+      launchCrackers(cx, cy);
+    }, 400);
+  }
+
+  // Init as soon as the card is visible (IntersectionObserver)
+  const io = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting && !initialized){
+        // Small delay to ensure layout is complete
+        setTimeout(init, 120);
+        io.disconnect();
+      }
+    });
+  }, {threshold:0.3});
+  io.observe(card);
+
+  // Fallback: also init after a short delay
+  setTimeout(()=>{ if(!initialized) init(); }, 800);
+
+  canvas.addEventListener('mousedown', e=>{ if(!initialized)init(); on=true; lastX=null; lastY=null; scrape(e.offsetX,e.offsetY); });
+  canvas.addEventListener('mousemove', e=>{ if(on) scrape(e.offsetX,e.offsetY); else {lastX=null;lastY=null;} });
+  window.addEventListener('mouseup',   ()=>{ on=false; lastX=null; lastY=null; });
+
+  canvas.addEventListener('touchstart', e=>{
+    if(!initialized)init(); on=true; lastX=null; lastY=null;
+    const r=canvas.getBoundingClientRect();
+    scrape(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); e.preventDefault();
   },{passive:false});
-  canvas.addEventListener('touchmove',e=>{
-    if(!on)return; const r=canvas.getBoundingClientRect();
-    scrape(e.touches[0].clientX-r.left,e.touches[0].clientY-r.top); e.preventDefault();
+  canvas.addEventListener('touchmove', e=>{
+    if(!on)return;
+    const r=canvas.getBoundingClientRect();
+    scrape(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); e.preventDefault();
   },{passive:false});
-  window.addEventListener('touchend',()=>on=false);
+  window.addEventListener('touchend', ()=>{ on=false; lastX=null; lastY=null; });
 })();
 </script>
 </body>
