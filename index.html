@@ -416,7 +416,11 @@ body{ background:var(--cream);color:var(--deep);font-family:'Cormorant Garamond'
 #scratch-canvas {
   position:absolute; inset:0;
   border-radius:20px;
-  touch-action:none; cursor:crosshair;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: crosshair;
   z-index: 10;
 }
 
@@ -743,7 +747,10 @@ function showerPetals() {
       const rotEnd   = rotStart + (Math.random() - 0.5) * 400;
       const swayX    = (Math.random() - 0.5) * 80;
 
+      const fallDist = window.innerHeight + size + 40;
       const el = document.createElement('div');
+      // top is FIXED at start position — never animated (layout reflow killer on mobile)
+      // all movement goes through transform (GPU composited, no reflow)
       el.style.cssText = `
         position: fixed;
         left: ${startX}px;
@@ -753,20 +760,19 @@ function showerPetals() {
         pointer-events: none;
         z-index: 99998;
         filter: drop-shadow(0 2px 4px rgba(180,100,100,0.18));
-        transform: rotate(${rotStart}deg);
+        transform: translateY(0px) rotate(${rotStart}deg) translateX(0px);
         opacity: 0.92;
         transition:
           transform ${dur}ms cubic-bezier(0.33, 0.1, 0.67, 0.9),
-          top       ${dur}ms cubic-bezier(0.33, 0.1, 0.67, 0.9),
           opacity   ${dur * 0.25}ms ease-in ${dur * 0.75}ms;
-        will-change: transform, top, opacity;
+        will-change: transform, opacity;
       `;
       el.innerHTML = svgStr;
       document.body.appendChild(el);
 
       requestAnimationFrame(()=>requestAnimationFrame(()=>{
-        el.style.top       = `${window.innerHeight + size + 20}px`;
-        el.style.transform = `rotate(${rotEnd}deg) translateX(${drift}px)`;
+        // translateY drives the fall, rotate+translateX add spin and drift
+        el.style.transform = `translateY(${fallDist}px) rotate(${rotEnd}deg) translateX(${drift}px)`;
         el.style.opacity   = '0';
       }));
 
@@ -806,7 +812,7 @@ function openCurtain() {
 // Trigger on first scroll
 window.addEventListener('scroll', openCurtain, { once:true, passive:true });
 // Also trigger on first touch (mobile)
-window.addEventListener('touchmove', openCurtain, { once:true, passive:true });
+window.addEventListener('touchstart', openCurtain, { once:true, passive:true });
 
 /* ── COUNTDOWN — 25 Dec 2026 11:00 AM ── */
 function tick(){
@@ -1048,20 +1054,29 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
     }, 400);
   }
 
-  // Init as soon as the card is visible (IntersectionObserver)
+  // Wait until card has real pixel dimensions before painting gold foil
+  // Fixes mobile bug where canvas drew at 0x0 (card not yet laid out)
+  function tryInit() {
+    if (initialized) return;
+    if (card.offsetWidth > 10 && card.offsetHeight > 10) {
+      init();
+    } else {
+      requestAnimationFrame(tryInit); // retry every frame until layout ready
+    }
+  }
+
   const io = new IntersectionObserver(entries=>{
     entries.forEach(e=>{
       if(e.isIntersecting && !initialized){
-        // Small delay to ensure layout is complete
-        setTimeout(init, 120);
+        tryInit();
         io.disconnect();
       }
     });
-  }, {threshold:0.3});
+  }, {threshold:0.1}); // lower threshold — catches card on small mobile screens
   io.observe(card);
 
-  // Fallback: also init after a short delay
-  setTimeout(()=>{ if(!initialized) init(); }, 800);
+  // Fallback: in case IO never fires (e.g. card already in viewport on load)
+  setTimeout(tryInit, 600);
 
   canvas.addEventListener('mousedown', e=>{ if(!initialized)init(); on=true; lastX=null; lastY=null; scrape(e.offsetX,e.offsetY); });
   canvas.addEventListener('mousemove', e=>{ if(on) scrape(e.offsetX,e.offsetY); else {lastX=null;lastY=null;} });
@@ -1070,7 +1085,7 @@ document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
   canvas.addEventListener('touchstart', e=>{
     if(!initialized)init(); on=true; lastX=null; lastY=null;
     const r=canvas.getBoundingClientRect();
-    scrape(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); e.preventDefault();
+    scrape(e.touches[0].clientX-r.left, e.touches[0].clientY-r.top); e.preventDefault(); e.stopPropagation();
   },{passive:false});
   canvas.addEventListener('touchmove', e=>{
     if(!on)return;
